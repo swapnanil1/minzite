@@ -1,0 +1,6 @@
+# Installation defaults only: switching images cannot convert an existing disk.
+[install]
+kargs = ["rootflags=noatime"]
+
+[install.filesystem.root]
+type = "ext4"

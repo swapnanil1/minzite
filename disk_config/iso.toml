@@ -1,7 +1,14 @@
+# KDE only. Keep Anaconda interactive for disk selection and account creation.
+# No clearpart/zerombr commands and no hard-coded target disk or account.
 [customizations.installer.kickstart]
 contents = """
-%post
-bootc switch --mutate-in-place --transport registry ghcr.io/ublue-os/image-template:latest
+graphical
+rootpw --lock
+autopart --type=plain --fstype=ext4 --noswap
+bootloader --append="rootflags=noatime"
+
+%post --erroronfail
+bootc switch --mutate-in-place --transport registry ghcr.io/swapnanil1/minzite:latest
 %end
 """
 
@@ -15,7 +22,4 @@ enable = [
   "org.fedoraproject.Anaconda.Modules.Users",
   "org.fedoraproject.Anaconda.Modules.Timezone"
 ]
-
-disable = [
-  "org.fedoraproject.Anaconda.Modules.Subscription",
-]
+disable = ["org.fedoraproject.Anaconda.Modules.Subscription"]
