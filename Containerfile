@@ -24,7 +24,7 @@ FROM ghcr.io/ublue-os/bazzite:stable
 ## Uncomment the following line if one desires to make /opt immutable and be able to be used
 ## by the package manager.
 
-# RUN rm /opt && mkdir /opt
+RUN if [ -L /opt ]; then rm /opt && mkdir /opt; fi
 
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script
@@ -38,4 +38,4 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 
 ### LINTING
 ## Verify final image and contents are correct.
-RUN bootc container lint
+RUN --mount=type=tmpfs,target=/run --network=none bootc container lint
