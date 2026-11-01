@@ -1,3 +1,55 @@
+# Minzite — Medium preset
+
+KDE/AMD Bazzite for a Ryzen 5 3600 and 16 GiB RAM, prioritizing CPU time and
+available memory. Native desktop apps replace the default Flatpak selections;
+unused services, automatic Flatpak setup, Baloo and Steam login autostart are
+disabled. Shared Flatpak libraries/CLI may remain for compatibility.
+
+Native development tools include Microsoft VS Code, Docker Engine CE with
+Compose/Buildx, Git/Git LFS/GitHub CLI, GCC/G++/Make/CMake, Python 3, terminal
+utilities, Brave, Postman and Zoom Meetings/Workplace. Node.js tracks the latest
+stable release at each image build without an LTS restriction; npm tracks
+`npm@latest`. Alpha/RC builds
+are excluded. Use project-local dependencies; for user-global npm tools, set
+`npm config set prefix "$HOME/.local"` and include `~/.local/bin` in your PATH.
+
+Heroic (upstream RPM pinned with its checksum) and native OBS Studio are included.
+LACT is not preinstalled; its Flatpak (`io.github.ilya_zlobintsev.LACT`) is an
+optional manual install. Automatic Flatpak setup and updates remain disabled.
+Docker is socket-activated; use `sudo docker` initially, or explicitly configure
+your installed user's Docker access. VS Code's container integrations can also
+activate Docker. No user/group changes are made on the development host.
+Applications, Node/npm, Postman and Zoom update with image rebuilds. Renovate tracks
+Heroic's stable release tag and matching native RPM checksum together, then
+merges its update PR after CI passes. `/opt` is image-managed for vendor
+RPMs. Docker data and application profiles remain writable under `/var`/home.
+
+Renovate's GitHub App must have access to this repository. Heroic uses
+Renovate-managed merging, so GitHub's native Allow auto-merge checkbox is not
+required; protect `main` with the `Build and push image` check for enforcement.
+Merged updates trigger the existing image build; the daily schedule also picks
+up Bazzite and package updates. Failed PR builds stay unmerged. Signing uses
+the existing `SIGNING_SECRET`; publishing happens only on the default branch.
+
+The image intentionally sets `mitigations=off selinux=0 audit=0 zswap.enabled=0`.
+It retains Bazzite's kernel, scheduler, graphics stack, zram, power management
+and automatic update scheduling; `vm.page-cluster=0` is the only VM override.
+Select KDE's performance power profile manually when gaming. Steam's launcher,
+shader settings and caches are untouched; existing user settings take precedence.
+
+New installations default to ext4 with normal journaling and write barriers.
+Direct bootc installs and the ISO request `noatime`. Switching images does not
+convert an existing filesystem. The custom welcome wizard is deferred; extra
+SSD swap can be configured separately if memory pressure warrants it.
+
+Review `build_files/build.sh`, `system_files/` and `disk_config/iso.toml` for the
+preset. No custom runtime helpers are required. Package resolution, installation,
+updates and rollback still need image/VM validation before use on hardware.
+Configure `SIGNING_SECRET` and its matching `cosign.pub` before publishing.
+The upstream template reference below describes the existing build tooling.
+
+---
+
 # image-template
 
 This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.
