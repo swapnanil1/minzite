@@ -1,0 +1,7 @@
+{
+  "modules": {
+    "flatpak": {"disable": true},
+    "brew": {"disable": true},
+    "distrobox": {"disable": true}
+  }
+}

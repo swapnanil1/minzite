@@ -1,0 +1,6 @@
+[install]
+kargs = ["rootflags=noatime"]
+
+[install.filesystem.root]
+# Default for bootc disk installs, not a restriction on custom Anaconda layouts.
+type = "btrfs"
