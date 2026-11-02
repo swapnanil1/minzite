@@ -1,0 +1,5 @@
+[install]
+kargs = ["rootflags=noatime"]
+
+[install.filesystem.root]
+type = "ext4"
