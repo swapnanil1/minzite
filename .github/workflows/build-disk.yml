@@ -94,9 +94,9 @@ jobs:
           cd "$OUTPUT_DIR"
           sha256sum minzite-deck-amd64.iso > SHA256SUMS
           cosign sign-blob --yes --key env://COSIGN_PRIVATE_KEY \
-            --bundle minzite-deck-amd64.iso.sigstore.json minzite-deck-amd64.iso
+            --output-signature minzite-deck-amd64.iso.sig minzite-deck-amd64.iso
           cosign verify-blob --key "$GITHUB_WORKSPACE/cosign.pub" \
-            --bundle minzite-deck-amd64.iso.sigstore.json minzite-deck-amd64.iso
+            --signature minzite-deck-amd64.iso.sig minzite-deck-amd64.iso
           cp "$GITHUB_WORKSPACE/cosign.pub" .
 
       - name: Upload signed installer ISO
@@ -105,7 +105,7 @@ jobs:
           name: minzite-deck-iso-amd64
           path: |
             ${{ steps.build.outputs.output-directory }}/*.iso
-            ${{ steps.build.outputs.output-directory }}/*.sigstore.json
+            ${{ steps.build.outputs.output-directory }}/*.sig
             ${{ steps.build.outputs.output-directory }}/SHA256SUMS
             ${{ steps.build.outputs.output-directory }}/cosign.pub
           if-no-files-found: error
