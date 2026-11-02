@@ -4,9 +4,13 @@ COPY build_files /
 COPY system_files /system_files
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite:stable
+# bazzite-deck is Bazzite's SteamOS-like flavor: it boots into Steam Gaming
+# Mode and includes the gamescope/steamos session, which the desktop flavor
+# does not. See README.md for the Minzite deck preset.
+FROM ghcr.io/ublue-os/bazzite-deck:stable
 ## Other possible base images include:
-# FROM ghcr.io/ublue-os/bazzite:testing
+# FROM ghcr.io/ublue-os/bazzite-deck:testing
+# FROM ghcr.io/ublue-os/bazzite:stable
 # FROM ghcr.io/ublue-os/aurora:stable
 # FROM ghcr.io/ublue-os/bluefin-nvidia-open:stable
 # 
@@ -24,7 +28,8 @@ FROM ghcr.io/ublue-os/bazzite:stable
 ## Uncomment the following line if one desires to make /opt immutable and be able to be used
 ## by the package manager.
 
-# RUN rm /opt && mkdir /opt
+# Required for vendor RPMs such as Brave, which install under /opt.
+RUN if [ -L /opt ]; then rm /opt && mkdir /opt; fi
 
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script

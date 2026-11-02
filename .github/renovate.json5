@@ -6,7 +6,32 @@
 
   "rebaseWhen": "never",
 
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^build_files\\/build\\.sh$/"],
+      "matchStrings": [
+        "heroic_version=(?<currentValue>v?[0-9]+\\.[0-9]+\\.[0-9]+)\\s+heroic_sha256=(?<currentDigest>[a-f0-9]{64})"
+      ],
+      "depNameTemplate": "Heroic-Games-Launcher/HeroicGamesLauncher",
+      "datasourceTemplate": "github-release-attachments",
+      "versioningTemplate": "semver"
+    }
+  ],
+
   "packageRules": [
+    {
+      "matchDatasources": ["github-release-attachments"],
+      "matchPackageNames": ["Heroic-Games-Launcher/HeroicGamesLauncher"],
+      "pinDigests": true,
+      "ignoreUnstable": true,
+      "allowedVersions": "/^v?[0-9]+\\.[0-9]+\\.[0-9]+$/",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false,
+      "ignoreTests": false,
+      "rebaseWhen": "behind-base-branch"
+    },
     {
       "automerge": true,
       "matchUpdateTypes": ["pin", "pinDigest"]

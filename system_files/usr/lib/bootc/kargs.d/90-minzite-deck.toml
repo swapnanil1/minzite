@@ -1,0 +1,4 @@
+# Minzite Deck performance tweaks. Keep allocator hardening, stack
+# randomization and watchdog defaults.
+match-architectures = ["x86_64"]
+kargs = ["mitigations=off", "selinux=0", "audit=0", "zswap.enabled=0"]

@@ -1,4 +1,68 @@
-# image-template
+# Minzite Deck
+
+A lightly customized [Bazzite](https://bazzite.gg) image built from
+`ghcr.io/ublue-os/bazzite-deck:stable`. It keeps the SteamOS-style experience
+out of the box — Gaming Mode on first boot, gamescope/steamos sessions,
+controller support, suspend/resume and the Decky/EmuDeck/ProtonUp-Qt workflow —
+while trimming desktop overhead and adding the native applications and
+development tools used in Desktop Mode.
+
+## Gaming Mode, retained
+
+- Boots into Steam Gaming Mode OOBE, with the same gamescope, Steam and
+  `steamos-manager` plumbing as Bazzite-Deck.
+- Steam, controller/input remapping, `scx_loader`, Flatpak (CLI and KCM),
+  the Bazzite Portal, `brew-setup`, and the Bazzite update stack are left
+  untouched. Decky Loader, EmuDeck and ProtonUp-Qt keep working.
+- The only removed storefront pieces are Bazaar and its KRunner plugins; the
+  Flatpak CLI and Bazzite Portal remain available.
+
+## Desktop Mode, streamlined
+
+- **Everyday apps:** Firefox, Gwenview, Okular, Haruna, Filelight, KCalc,
+  KDE Partition Manager, Plasma System Monitor, OBS Studio, Protontricks,
+  Postman, Zoom Meetings/Workplace, Brave and Heroic.
+- **Development:** VS Code, Docker Engine CE with Compose and Buildx
+  (socket-activated, not started at every boot), Git, Git LFS, GitHub CLI,
+  GCC/G++, Make, CMake, pkg-config, Python 3, Node.js (latest stable, not
+  pinned to LTS) with `npm@latest`, and common terminal utilities
+  (`curl`, `wget`, `jq`, `ripgrep`, `fd`, `rsync`, `lsof`, OpenSSL and more).
+- **Lower background overhead:** Baloo indexing is disabled, and optional
+  services such as printing, Cockpit, ModemManager, Tailscale, Waydroid and
+  auditd stay installed but do not start automatically. Nothing required by
+  Gaming Mode is masked.
+
+## Performance
+
+- Kernel arguments: `mitigations=off`, `selinux=0`, `audit=0`,
+  `zswap.enabled=0`.
+- `vm.page-cluster=0` for the zram configuration; upstream swappiness,
+  reclaim and transparent-hugepage policy are preserved.
+- Btrfs root with the upstream 20 GiB minimum, so bees deduplication and the
+  Bazzite-Deck subvolume layout keep working.
+
+## Installing
+
+The installer ISO is built from `disk_config/iso-kde.toml` and switches the
+installed system to `ghcr.io/swapnanil1/minzite:latest`. To rebase an existing
+Bazzite-Deck system:
+
+```bash
+sudo bootc switch ghcr.io/swapnanil1/minzite:latest
+```
+
+## Builds and signing
+
+- Container images are signed with cosign using the `SIGNING_SECRET` private
+  key (empty passphrase); the matching public key is committed as
+  `cosign.pub`.
+- Pushes to the default branch publish and sign the image. Pull requests and
+  other branches only build for validation.
+- Disk image builds verify the container signature before creating the ISO.
+- Renovate tracks the pinned Heroic RPM release and checksum.
+
+# Upstream image-template documentation
+
 
 This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.
 

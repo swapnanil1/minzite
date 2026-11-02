@@ -1,27 +1,112 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -ouex pipefail
-
-# Copy the contents of system_files/ of the git repo to /
-cp -avf "/ctx/system_files"/. /
-
-### Install packages
-
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
-
-# this installs a package from fedora repos
-dnf5 install -y tmux
-
-# Use a COPR Example:
+# Minzite Deck — Bazzite-Deck with a smaller desktop footprint, performance
+# tweaks and native desktop/development packages.
 #
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+# Keep the Gaming Mode pieces untouched: Steam, gamescope-session-plus,
+# steamos-manager, controllers, Flatpak and the Bazzite Portal/update stack.
 
-#### Example for enabling a System Unit File
+[[ $(uname -m) == x86_64 ]] || { echo 'Minzite Deck targets x86_64.' >&2; exit 1; }
 
-systemctl enable podman.socket
+# Remove the desktop Flatpak storefront/search integration. The Bazzite Portal,
+# Flatpak CLI and Flatpak KCM stay installed, so Decky/EmuDeck/ProtonUp-Qt and
+# manual Flatpak installs still work.
+remove=()
+for package in bazaar krunner-bazaar krunner-yafti; do
+    if rpm -q "$package" >/dev/null 2>&1; then remove+=("$package"); fi
+done
+if ((${#remove[@]})); then
+    dnf5 -y --setopt=clean_requirements_on_remove=False remove "${remove[@]}"
+fi
+
+# Native desktop and development tools.
+dnf5 -y --setopt=install_weak_deps=False install \
+    firefox gwenview okular kcalc haruna filelight kde-partitionmanager \
+    plasma-systemmonitor protontricks obs-studio \
+    git git-lfs gh openssh-clients gcc gcc-c++ make cmake pkgconf-pkg-config python3 \
+    curl wget jq ripgrep fd-find unzip zip tar xz rsync lsof bind-utils openssl
+
+# Vendor RPM repositories: Microsoft VS Code, Docker CE and Brave stable.
+cat >/etc/yum.repos.d/vscode.repo <<'EOF'
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
+dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+dnf5 config-manager addrepo --from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
+dnf5 -y --setopt=install_weak_deps=False install \
+    code brave-browser docker-ce docker-ce-cli containerd.io \
+    docker-buildx-plugin docker-compose-plugin
+
+# Latest native Zoom Meetings/Workplace RPM, verified against Zoom's signing key.
+rpm --import https://zoom.us/linux/download/pubkey
+dnf5 -y --setopt=localpkg_gpgcheck=True --setopt=install_weak_deps=False install \
+    https://zoom.us/client/latest/zoom_x86_64.rpm
+
+# Renovate updates the release tag and matching RPM digest together.
+heroic_version=v2.22.4
+heroic_sha256=c346ce64b5f29a53367c8fd701d061b9a3a83a7b5d53135a31a81147a36951e4
+curl -fLsS --retry 3 -o /tmp/heroic.rpm \
+    "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/${heroic_version}/Heroic-${heroic_version#v}-linux-x86_64.rpm"
+echo "${heroic_sha256}  /tmp/heroic.rpm" | sha256sum --check --status
+dnf5 -y --setopt=install_weak_deps=False install /tmp/heroic.rpm
+
+# Latest stable Node release, regardless of LTS status. Never select an alpha/RC.
+node_version=$(curl -fLsS --retry 3 https://nodejs.org/dist/index.json |
+    jq -er '[.[] | select(.version | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))] |
+        max_by(.version | ltrimstr("v") | split(".") | map(tonumber)) | .version')
+node_archive="node-${node_version}-linux-x64.tar.xz"
+curl -fLsS --retry 3 -o "/tmp/${node_archive}" "https://nodejs.org/dist/${node_version}/${node_archive}"
+curl -fLsS --retry 3 "https://nodejs.org/dist/${node_version}/SHASUMS256.txt" |
+    awk -v archive="$node_archive" '$2 == archive {print $1 "  /tmp/" $2}' |
+    sha256sum --check --status
+mkdir -p /usr/lib/nodejs-current
+tar -xJf "/tmp/${node_archive}" --strip-components=1 -C /usr/lib/nodejs-current
+for command in node npm npx; do
+    ln -sf "/usr/lib/nodejs-current/bin/${command}" "/usr/bin/${command}"
+done
+NPM_CONFIG_CACHE=/tmp/npm-cache npm install --global --prefix /usr/lib/nodejs-current \
+    --engine-strict --no-audit --no-fund npm@latest
+node --version
+npm --version
+
+# Official native Postman bundle. /usr/lib is updated with the OS image.
+curl -fLsS --retry 3 -o /tmp/postman.tar.gz https://dl.pstmn.io/download/latest/linux_64
+mkdir -p /usr/lib/postman
+tar -xzf /tmp/postman.tar.gz --strip-components=1 -C /usr/lib/postman
+test -x /usr/lib/postman/app/Postman
+ln -sf /usr/lib/postman/app/Postman /usr/bin/postman
+rm -f /tmp/heroic.rpm "/tmp/${node_archive}" /tmp/postman.tar.gz
+rm -rf /tmp/npm-cache
+
+# Install configuration after RPM transactions so package defaults cannot win.
+cp -a /ctx/system_files/. /
+
+# Optional services stay installed but cannot start through socket/D-Bus
+# activation. Do NOT touch anything Gaming Mode, controllers, Flatpak, the
+# Bazzite Portal or the update stack relies on.
+for unit in \
+    cockpit.socket cockpit.service cups.service cups.socket cups.path \
+    cups-browsed.service ModemManager.service auditd.service \
+    tailscaled.service waydroid-container.service; do
+    systemctl mask "$unit" 2>/dev/null || true
+done
+# Container engines need not listen at every login. CLI Podman remains usable.
+systemctl mask podman.socket 2>/dev/null || true
+systemctl --global mask podman.socket 2>/dev/null || true
+# Start Docker on demand; do not start containers at every boot.
+systemctl disable docker.service containerd.service 2>/dev/null || true
+systemctl enable docker.socket
+
+# Fail rather than accidentally shipping a broken Gaming Mode or desktop.
+rpm -q steam gamescope-session-ogui-steam steamos-manager-powerstation \
+    sddm kwin plasma-desktop xdg-desktop-portal-kde \
+    mesa-vulkan-drivers pipewire tuned-ppd protontricks \
+    code brave-browser zoom obs-studio docker-ce docker-ce-cli \
+    docker-buildx-plugin docker-compose-plugin
+
+dnf5 clean all

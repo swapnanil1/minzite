@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Postman
+Comment=API development and testing
+Exec=/usr/bin/postman %U
+Icon=/usr/lib/postman/app/resources/app/assets/icon.png
+Terminal=false
+Categories=Development;
