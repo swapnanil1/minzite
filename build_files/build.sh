@@ -17,7 +17,7 @@ fi
 
 # Native apps, Fedora Node.js 24 with matching npm, and build dependencies.
 dnf5 -y --setopt=install_weak_deps=False install \
-    obs-studio postgresql postgresql-server nodejs24 nodejs24-npm-bin \
+    obs-studio postgresql postgresql-server nodejs26 nodejs26-npm-bin \
     python3-pyyaml curl jq
 
 # Vendor RPM repositories: Microsoft VS Code and Docker CE.
