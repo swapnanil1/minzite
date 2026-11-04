@@ -77,7 +77,9 @@ sed -i '/^\[profiles\]/,/^\[battery\]/s/^performance=throughput-performance-bazz
 sed -i 's/^default_sched = .*/default_sched = "scx_bpfland"/' /etc/scx_loader/config.toml
 
 # Keep upstream Topgrade defaults except for our OS/firmware-only update policy.
-sed -i 's/^only = .*/only = ["system", "firmware"]/' /usr/share/ublue-os/topgrade.toml
+if [[ -f /usr/share/ublue-os/topgrade.toml ]]; then
+    sed -i 's/^only = .*/only = ["system", "firmware"]/' /usr/share/ublue-os/topgrade.toml
+fi
 
 # Edit upstream Portal data rather than maintaining a full copy of it.
 python3 - <<'PY'
@@ -114,7 +116,7 @@ rpm -q steam gamescope-session-ogui-steam steamos-manager-powerstation \
     mesa-vulkan-drivers pipewire tuned-ppd \
     code discord heroic zoom obs-studio docker-ce docker-ce-cli \
     docker-buildx-plugin docker-compose-plugin postgresql postgresql-server \
-    mongodb-mongosh-shared-openssl3 nodejs24 nodejs24-npm-bin
+    mongodb-mongosh-shared-openssl3 nodejs26 nodejs26-npm-bin
 for package in "${unwanted[@]}"; do
     if rpm -q "$package" >/dev/null 2>&1; then
         echo "An unwanted package was reintroduced: $package" >&2
