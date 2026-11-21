@@ -56,7 +56,7 @@ dnf5 -y --setopt=localpkg_gpgcheck=True --setopt=install_weak_deps=False install
 
 # Renovate updates the release tag and matching RPM digest together.
 heroic_version=v2.22.4
-heroic_sha256=c346ce64b5f29a53367c8fd701d061b9a3a83a7b5d53135a31a81147a36951e4
+heroic_sha256=18627a88654a727f298c0342fc803cc783e27f467a097fc2b0db7ba1391dd16b
 curl -fLsS --retry 3 -o /tmp/heroic.rpm \
     "https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/releases/download/${heroic_version}/Heroic-${heroic_version#v}-linux-x86_64.rpm"
 echo "${heroic_sha256}  /tmp/heroic.rpm" | sha256sum --check --status
